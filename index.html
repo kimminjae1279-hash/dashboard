@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INSIGHT·DB</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ─── Reset ─── */
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#f2f4f6;color:#191f28;font-family:'Noto Sans KR',sans-serif;min-height:100vh;}
+button,select{font-family:'Noto Sans KR',sans-serif;cursor:pointer;}
+
+/* ─── NAV ─── */
+.toss-nav{
+  display:flex;align-items:center;
+  background:#fff;border-bottom:1px solid #e5e8eb;
+  padding:0 20px;height:58px;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 1px 8px rgba(0,0,0,.04);
+  gap:4px;
+}
+.toss-logo{
+  font-size:17px;font-weight:900;color:#3182f6;
+  margin-right:20px;letter-spacing:1px;
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+.toss-nav-item{
+  height:58px;display:flex;align-items:center;
+  padding:0 14px;font-size:14px;font-weight:700;
+  color:#8b95a1;cursor:pointer;
+  border-bottom:2.5px solid transparent;transition:.15s;
+  white-space:nowrap;
+}
+.toss-nav-item:hover{color:#191f28;}
+.toss-nav-item.active{color:#3182f6;border-color:#3182f6;}
+.nav-spacer{flex:1;}
+.refresh-btn{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 16px;background:#f2f4f6;
+  color:#4e5968;font-weight:700;font-size:13px;
+  border:none;border-radius:14px;transition:background .15s;
+}
+.refresh-btn:hover{background:#e5e8eb;}
+.refresh-btn svg{width:18px;height:18px;}
+
+/* ─── Pages ─── */
+.page{display:none;}.page.active{display:block;}
+
+/* ─── toss-card ─── */
+.toss-card{background:#fff;border:1px solid #e5e8eb;border-radius:24px;padding:16px 20px;}
+
+/* ─── MAIN page — max-w-7xl p-3 space-y-1.5 ─── */
+.main-page{max-width:1280px;margin:0 auto;padding:12px;display:flex;flex-direction:column;gap:6px;}
+
+/* grid-cols-12: 상단 col-2 + col-10, 하단 col-6 + col-6 */
+.main-top{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,10fr);gap:8px;margin-bottom:0;}
+/* ④ 하단 양쪽 패널: align-items:stretch로 동일 높이, 고정 min-height */
+.main-bottom{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch;}
+.main-bottom > .toss-card{height:680px;overflow:hidden;display:flex;flex-direction:column;}
+
+/* ─── 좌측 col-2 ─── */
+.left-col{display:flex;flex-direction:column;gap:8px;}
+
+/* 월 선택 */
+.month-box{
+  position:relative;
+  border:2px solid #3182f6;border-radius:20px;overflow:hidden;background:#fff;
+}
+.month-sel{
+  width:100%;height:72px;background:#fff;
+  font-weight:900;font-size:32px;
+  outline:none;cursor:pointer;
+  padding:0 40px 0 12px;appearance:none;
+  text-align:center;color:#3182f6;border:none;
+}
+.month-chev{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  pointer-events:none;color:#3182f6;
+}
+
+/* 리테일 카드 */
+.retail-card{display:flex;flex-direction:column;padding:14px 12px;flex:1;overflow:hidden;}
+.retail-lbl{font-size:12px;font-weight:700;color:#8b95a1;text-align:center;margin-bottom:6px;}
+/* ① 성장율: 항상 소수점1자리까지 보이도록 폰트 고정 */
+.retail-pct{
+  font-size:clamp(14px,1.6vw,24px);
+  font-weight:900;line-height:1;text-align:center;
+  margin-bottom:10px;letter-spacing:-1px;
+  white-space:nowrap;overflow:hidden;
+}
+.retail-rows{width:100%;display:flex;flex-direction:column;gap:7px;}
+.retail-row{display:flex;justify-content:space-between;align-items:center;gap:4px;min-width:0;}
+.retail-row.bdr{border-top:1px solid #f2f4f6;padding-top:7px;}
+.r-lbl{font-size:10px;font-weight:700;color:#8b95a1;white-space:nowrap;flex-shrink:0;}
+.r-lbl.red{color:#ff4d4f;}
+.r-val{font-size:clamp(11px,1.5vw,14px);font-weight:900;color:#191f28;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;text-align:right;}
+.r-val.red{color:#ff4d4f;}
+
+/* ─── 우측 col-10 ─── */
+/* ② 상위/하위 박스 사이 gap 4→2px */
+.right-col{display:flex;flex-direction:column;gap:2px;}
+
+/* 순위 카드 스크롤 */
+.rank-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+.rank-scroll::-webkit-scrollbar{height:3px;}
+.rank-scroll::-webkit-scrollbar-thumb{background:#e5e8eb;}
+
+/* ③ 순위 카드: 여백 최소화 */
+.rcard{
+  flex-shrink:0;width:152px;padding:6px 8px;
+  border:1px solid #e5e8eb;border-radius:16px;
+  cursor:pointer;transition:all .15s;
+  background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.04);
+  overflow:hidden;
+}
+.rcard:hover{border-color:#3182f6;box-shadow:0 2px 12px rgba(49,130,246,.1);}
+.rcard.sel{border-color:#3182f6;background:#f2f8ff;}
+/* ③ 태그~지점명 간격 최소화 */
+.rcard-tags{display:flex;justify-content:space-between;gap:4px;margin-bottom:3px;}
+.rcard-name{text-align:center;font-weight:700;font-size:14px;color:#191f28;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rcard-val{text-align:center;font-size:22px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ─── TAGS ─── ⑥ 태그 실제 2배 크기 */
+.tag{display:inline-block;padding:2px 7px;border-radius:6px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.tag-xs{font-size:11px;padding:2px 6px;border-radius:5px;}
+.tg-h1{background:#e6f9f4;color:#00b386;}
+.tg-h2{background:#f2f8ff;color:#3182f6;}
+.tg-h3{background:#fff3e0;color:#f57c00;}
+.tg-h4{background:#f9fafb;color:#4e5968;}
+.tg-x{background:#f9fafb;color:#8b95a1;}
+.tg-L{background:#f2f8ff;color:#3182f6;}
+.tg-M{background:#e6f9f4;color:#00b386;}
+.tg-S{background:#fff3e0;color:#f57c00;}
+.pos{color:#2ecc71;}.neg{color:#ff4d4f;}.nt{color:#8b95a1;}
+
+/* ─── 필터 버튼 — gap-1 flex-1 px-1 py-1.5 text-sm ─── */
+.filter-row{display:flex;gap:3px;margin-bottom:10px;overflow:hidden;}
+.filter-row::-webkit-scrollbar{height:3px;}
+.fbtn{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:5px 2px;flex:1;min-width:0;
+  border-radius:10px;border:1px solid transparent;
+  background:#f2f4f6;color:#4e5968;
+  cursor:pointer;transition:all .15s;overflow:hidden;
+}
+.fbtn:hover{border-color:#e5e8eb;}
+.fbtn.active{background:#3182f6;color:#fff;border-color:#3182f6;}
+.fbtn-name{font-size:11px;font-weight:700;margin-bottom:1px;white-space:nowrap;}
+.fbtn-val{font-size:10px;font-weight:900;white-space:nowrap;}
+.fbtn.active .fbtn-val{color:rgba(255,255,255,.9);}
+
+/* ─── 지점 테이블 ─── */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{
+  padding:6px 8px;text-align:left;
+  font-size:10px;font-weight:700;color:#8b95a1;
+  border-bottom:1px solid #e5e8eb;
+  background:#fff;white-space:nowrap;
+  position:sticky;top:0;z-index:5;cursor:pointer;
+}
+.tbl th:hover{background:#f9fafb;}
+.tbl td{
+  padding:6px 8px;font-size:12px;
+  border-bottom:1px solid rgba(229,232,235,.4);
+  white-space:nowrap;cursor:pointer;transition:background .1s;
+}
+.tbl tr:hover td{background:#f9fafb;}
+.tbl tr.sel td{background:#f2f8ff;}
+.tscroll{overflow-y:auto;max-height:560px;}
+.tscroll::-webkit-scrollbar{width:3px;}
+.tscroll::-webkit-scrollbar-thumb{background:#e5e8eb;}
+
+/* ─── 일별 상세 ─── */
+.det-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:8px;}
+.det-name{font-size:18px;font-weight:900;color:#191f28;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.det-sub{font-size:10px;color:#8b95a1;font-weight:700;}
+.det-badge{font-size:10px;font-weight:700;color:#3182f6;background:#e8f3ff;padding:4px 10px;border-radius:10px;white-space:nowrap;flex-shrink:0;}
+.chart-empty{
+  height:220px;display:flex;align-items:center;justify-content:center;
+  background:#f9fafb;border-radius:20px;border:1.5px dashed #e5e8eb;
+  color:#8b95a1;font-size:13px;font-weight:700;
+}
+/* ④ 차트 영역: 고정 높이 + 가로 스크롤 — 레이아웃 변경 없음 */
+.chart-scroll{
+  height:240px;min-height:240px;flex-shrink:0;
+  overflow-x:auto;overflow-y:hidden;margin-bottom:10px;
+}
+.chart-scroll::-webkit-scrollbar{height:4px;}
+.chart-scroll::-webkit-scrollbar-thumb{background:#d1d6db;border-radius:2px;}
+/* 일별 테이블 */
+.daily-tbl-scroll{overflow-y:auto;max-height:260px;flex-shrink:0;}
+.daily-tbl-scroll::-webkit-scrollbar{width:3px;}
+.daily-tbl-scroll::-webkit-scrollbar-thumb{background:#e5e8eb;}
+
+/* ─── 빈 상태 화면 ─── */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px 20px;gap:24px;
+}
+.empty-icon{
+  width:80px;height:80px;background:#f2f4f6;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:#8b95a1;
+}
+.empty-title{font-size:22px;font-weight:700;color:#191f28;margin-bottom:8px;text-align:center;}
+.empty-desc{font-size:14px;color:#4e5968;text-align:center;}
+.load-btn{
+  padding:16px 32px;background:#3182f6;color:#fff;font-weight:700;font-size:15px;
+  border:none;border-radius:20px;cursor:pointer;transition:background .15s;
+  box-shadow:0 4px 16px rgba(49,130,246,.25);
+}
+.load-btn:hover{background:#1b64da;}
+
+/* ─── 누적 분석 ─── */
+.cum-page{max-width:1280px;margin:0 auto;padding:12px;display:flex;flex-direction:column;gap:16px;}
+.cum-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.period-btns{display:flex;gap:8px;}
+.pbtn{
+  padding:8px 16px;border-radius:14px;font-size:13px;font-weight:700;
+  border:1px solid #e5e8eb;background:#fff;color:#8b95a1;cursor:pointer;transition:.15s;
+}
+.pbtn:hover{border-color:#3182f6;}
+.pbtn.active{background:#3182f6;color:#fff;border-color:#3182f6;}
+.cum-sel{
+  height:40px;background:#fff;font-weight:700;font-size:14px;
+  border:1px solid #e5e8eb;padding:0 28px 0 14px;border-radius:14px;
+  outline:none;appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%238b95a1'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+/* 기간 카드 — grid-cols-2 md:grid-cols-4 gap-2 py-3 px-3 */
+.pcards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.pcard{
+  background:#fff;border:2px solid transparent;border-radius:24px;
+  padding:12px;cursor:pointer;transition:.15s;
+  position:relative;overflow:hidden;
+}
+.pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:transparent;}
+.pcard:hover{border-color:#e5e8eb;}
+.pcard.active{border-color:#3182f6;background:#f2f8ff;}
+.pcard.active::before{background:#3182f6;}
+.pcard-lbl{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:9px;font-weight:700;color:#8b95a1;
+  text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;
+}
+.pcard-val{font-size:18px;font-weight:900;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pcard-sub{font-size:8px;color:#adb5bd;font-family:'JetBrains Mono',monospace;}
+.chart-icon{padding:10px;background:#e8f3ff;border-radius:16px;color:#3182f6;display:flex;align-items:center;}
+.chart-legend{display:flex;align-items:center;gap:20px;font-size:12px;font-weight:700;}
+.leg-dot{width:12px;height:12px;border-radius:50%;}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav class="toss-nav">
+  <div class="toss-logo">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    INSIGHT·DB
+  </div>
+  <div class="toss-nav-item active" onclick="goPage('main',this)">메인 대시보드</div>
+  <div class="toss-nav-item" onclick="goPage('cum',this)">누적 분석</div>
+  <div class="nav-spacer"></div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <div id="api-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#f2f4f6;color:#8b95a1;">로컬 데이터</div>
+    <button class="refresh-btn" onclick="refreshData()">
+      <svg id="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      데이터 최신화
+    </button>
+  </div>
+</nav>
+
+<!-- ══════ MAIN ══════ -->
+<div id="pg-main" class="page active">
+<div class="main-page">
+
+  <!-- 빈 상태 -->
+  <div id="empty-state" style="display:none;" class="toss-card empty-state">
+    <div class="empty-icon">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    </div>
+    <div>
+      <div class="empty-title">데이터가 로드되지 않았습니다</div>
+      <div class="empty-desc">우측 상단의 '데이터 최신화' 버튼을 눌러 데이터를 불러와주세요.</div>
+    </div>
+    <button class="load-btn" onclick="refreshData()">데이터 불러오기</button>
+  </div>
+
+  <!-- 대시보드 콘텐츠 -->
+  <div id="dashboard-content">
+    <!-- 상단: col-2 + col-10 -->
+    <div class="main-top">
+      <!-- 좌측 -->
+      <div class="left-col">
+        <div class="month-box">
+          <select class="month-sel" id="gmonth" onchange="onMonth()">
+            <option value="4">4월</option>
+            <option value="1">1월</option>
+            <option value="2">2월</option>
+            <option value="3">3월</option>
+          </select>
+          <div class="month-chev">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="toss-card retail-card" style="flex:1;">
+          <div class="retail-lbl">리테일</div>
+          <div class="retail-pct pos" id="s-total">+6.0%</div>
+          <div class="retail-rows">
+            <div class="retail-row">
+              <span class="r-lbl">당기</span>
+              <span class="r-val" id="s-act">599.7억</span>
+            </div>
+            <div class="retail-row bdr">
+              <span class="r-lbl red">전기</span>
+              <span class="r-val red" id="s-prv">565.6억</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 우측: 상위/하위 5 -->
+      <div class="right-col">
+        <div class="toss-card" style="flex:1;padding:8px 12px;">
+          <div style="font-size:14px;font-weight:700;color:#4e5968;margin-bottom:6px;">상위 5개점</div>
+          <div class="rank-scroll" id="top5"></div>
+        </div>
+        <div class="toss-card" style="flex:1;padding:8px 12px;">
+          <div style="font-size:14px;font-weight:700;color:#4e5968;margin-bottom:6px;">하위 5개점</div>
+          <div class="rank-scroll" id="bot5"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 하단: col-6 + col-6 -->
+    <div class="main-bottom">
+      <!-- 지점 현황 -->
+      <div class="toss-card" style="display:flex;flex-direction:column;min-height:600px;">
+        <div style="font-size:14px;font-weight:700;color:#4e5968;margin-bottom:12px;">지점 현황</div>
+        <div class="filter-row" id="filter-row"></div>
+        <div class="tscroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:15%" onclick="toggleSort('hq')">본부 <span id="sh-hq">↕</span></th>
+                <th style="width:15%" onclick="toggleSort('type')">구분 <span id="sh-type">↕</span></th>
+                <th style="width:25%" onclick="toggleSort('name')">지점 <span id="sh-name">↕</span></th>
+                <th style="width:15%;text-align:right" onclick="toggleSort('prev')">전년 <span id="sh-prev">↕</span></th>
+                <th style="width:15%;text-align:right" onclick="toggleSort('actual')">실적 <span id="sh-actual">↕</span></th>
+                <th style="width:15%;text-align:right" onclick="toggleSort('growth')">성장율 <span id="sh-growth">▼</span></th>
+              </tr>
+            </thead>
+            <tbody id="btbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 일별 상세 -->
+      <div class="toss-card" style="display:flex;flex-direction:column;gap:0;min-height:600px;">
+        <div class="det-head">
+          <div>
+            <div class="det-name" id="dp-name">지점명</div>
+            <div class="det-sub">일별 매출 추이 (2026 vs 2025)</div>
+          </div>
+          <div class="det-badge">일별 성장율 상세</div>
+        </div>
+        <div class="chart-scroll" id="chart-area">
+          <div class="chart-empty">지점을 선택해주세요</div>
+        </div>
+        <div class="daily-tbl-scroll">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th style="text-align:right;color:#ff4d4f">전년</th>
+                <th style="text-align:right">실적</th>
+                <th style="text-align:right">성장율</th>
+              </tr>
+            </thead>
+            <tbody id="dtbody">
+              <tr><td colspan="4" style="text-align:center;color:#8b95a1;padding:20px">지점을 선택해주세요</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══════ CUMULATIVE ══════ -->
+<div id="pg-cum" class="page">
+<div class="cum-page">
+
+  <div class="cum-topbar">
+    <div class="period-btns">
+      <button class="pbtn active" onclick="selPeriod('daily',this)">일 누적</button>
+      <button class="pbtn" onclick="selPeriod('weekly',this)">주 누적</button>
+      <button class="pbtn" onclick="selPeriod('monthly',this)">월 누적</button>
+      <button class="pbtn" onclick="selPeriod('annual',this)">전체 누적</button>
+    </div>
+    <select class="cum-sel" id="cum-month" onchange="renderCumPage()">
+      <option value="4">4월</option><option value="1">1월</option>
+      <option value="2">2월</option><option value="3">3월</option>
+    </select>
+  </div>
+
+  <div class="pcards">
+    <div class="pcard active" onclick="selPeriod('daily',null,this)">
+      <div class="pcard-lbl"><span>일 누적</span><span>📅</span></div>
+      <div class="pcard-val pos" id="pc-daily">+6.0%</div>
+      <div class="pcard-sub" id="pc-daily-sub">최근 영업일</div>
+    </div>
+    <div class="pcard" onclick="selPeriod('weekly',null,this)">
+      <div class="pcard-lbl"><span>주 누적</span><span>📊</span></div>
+      <div class="pcard-val pos" id="pc-weekly">+3.2%</div>
+      <div class="pcard-sub" id="pc-weekly-sub">최근 7일</div>
+    </div>
+    <div class="pcard" onclick="selPeriod('monthly',null,this)">
+      <div class="pcard-lbl"><span>월 누적</span><span>📆</span></div>
+      <div class="pcard-val neg" id="pc-monthly">-0.1%</div>
+      <div class="pcard-sub" id="pc-monthly-sub">4월 전체</div>
+    </div>
+    <div class="pcard" onclick="selPeriod('annual',null,this)">
+      <div class="pcard-lbl"><span>전체 누적</span><span>📈</span></div>
+      <div class="pcard-val pos" id="pc-annual">+3.1%</div>
+      <div class="pcard-sub">2026 YTD</div>
+    </div>
+  </div>
+
+  <div class="toss-card" style="overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="chart-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;" id="chart-title">누적 실적 추이</div>
+          <div style="font-size:12px;color:#8b95a1;font-weight:700;margin-top:2px;" id="chart-sub">전년 동기 대비 성장 트렌드 분석</div>
+        </div>
+      </div>
+      <div class="chart-legend">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#4e5968;">
+          <div class="leg-dot" style="background:#3182f6"></div>2026년 실적
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#ff4d4f;">
+          <div class="leg-dot" style="background:#ff4d4f"></div>2025년 실적
+        </div>
+      </div>
+    </div>
+    <svg id="cum-svg" style="width:100%;overflow:hidden;display:block;" height="380"></svg>
+  </div>
+
+  <div class="toss-card">
+    <div style="font-size:14px;font-weight:700;color:#4e5968;margin-bottom:14px;" id="det-label">상세 데이터 로그 (일별)</div>
+    <div class="tscroll" style="max-height:300px;">
+      <table class="tbl"><thead id="cth"></thead><tbody id="ctb"></tbody></table>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ══════════════════════ 실제 엑셀 데이터 ══════════════════════
+
+// ══════ 엑셀 RAW ABCD 기반 실제 계산값 (2번 시트 함수 로직 재현) ══════
+// RAW!M = SUMIFS(D:D, B:B, H, C:C, J)  → 2026 실적
+// RAW!N = SUMIFS(D:D, B:B, H, C:C, I)  → 2025 실적
+// 1번 시트 AG = SUMIFS(RAW!M:M, H=지점, K=월, J<=TODAY())
+// 1번 시트 AH = SUMIFS(RAW!N:N, H=지점, K=월, I>=2025-01-01, I<=EDATE(TODAY(),-12))
+
+// ── 월별 지점 데이터 (각 월 선택시 사용) ──
+const BRANCHES={
+  1:[
+    {h:"2본부",t:"대형",n:"강남점",    c:8206,v26:21360388769,v25:21753645103,g:-0.01808},
+    {h:"1본부",t:"대형",n:"강서점",    c:8227,v26:17907552274,v25:17055201669,g:0.04998},
+    {h:"2본부",t:"대형",n:"야탑점",    c:8202,v26:14813304497,v25:14379424103,g:0.03017},
+    {h:"1본부",t:"대형",n:"부천점",    c:8222,v26:13689868416,v25:13425202417,g:0.01971},
+    {h:"2본부",t:"대형",n:"송파점",    c:8224,v26:13153973725,v25:12285755031,g:0.07067},
+    {h:"1본부",t:"대형",n:"평촌2점",   c:8205,v26:11812587974,v25:11715041474,g:0.00833},
+    {h:"1본부",t:"대형",n:"불광점",    c:7217,v26:11075652321,v25:10282889581,g:0.07710},
+    {h:"2본부",t:"대형",n:"신구로점",  c:8242,v26:10189844339,v25:9572715577, g:0.06447},
+    {h:"3본부",t:"대형",n:"대전유성점",c:8243,v26:9320546609, v25:8928411007, g:0.04392},
+    {h:"2본부",t:"대형",n:"분당점",    c:7209,v26:8931699701, v25:8528146169, g:0.04732},
+    {h:"1본부",t:"대형",n:"일산점",    c:8201,v26:8543573471, v25:7967155938, g:0.07235},
+    {h:"1본부",t:"대형",n:"고잔점",    c:7219,v26:7731356987, v25:8132417757, g:-0.04932},
+    {h:"4본부",t:"중형",n:"쇼핑점",    c:8501,v26:7225511434, v25:6445820729, g:0.12096},
+    {h:"1본부",t:"대형",n:"인천점",    c:8203,v26:7088576601, v25:6556175532, g:0.08121},
+    {h:"2본부",t:"중형",n:"중계점",    c:7204,v26:5834919682, v25:5977104513, g:-0.02379},
+    {h:"2본부",t:"중형",n:"동수원",    c:8208,v26:5820586119, v25:6037738174, g:-0.03597},
+    {h:"3본부",t:"중형",n:"해운대점",  c:7214,v26:4974819740, v25:4959899740, g:0.00301},
+    {h:"3본부",t:"중형",n:"순천점",    c:8212,v26:4762229006, v25:4987200528, g:-0.04511},
+    {h:"2본부",t:"중형",n:"수원터미널점",c:8237,v26:4635948792,v25:4664049633, g:-0.00602},
+    {h:"3본부",t:"중형",n:"부산대점",  c:8229,v26:4422845562, v25:4655437503, g:-0.04996},
+    {h:"3본부",t:"중형",n:"괴정점",    c:8218,v26:3866079780, v25:3883049364, g:-0.00437},
+    {h:"3본부",t:"중형",n:"창원점",    c:8220,v26:3714897154, v25:3967681874, g:-0.06371},
+    {h:"1본부",t:"소형",n:"산본점",    c:8215,v26:3651465274, v25:2885515706, g:0.26545},
+    {h:"3본부",t:"소형",n:"청주점",    c:8241,v26:3524267489, v25:3411876743, g:0.03294},
+    {h:"4본부",t:"소형",n:"수성점",    c:8502,v26:3379909628, v25:3824360385, g:-0.11622},
+    {h:"3본부",t:"소형",n:"덕천점",    c:8223,v26:3353501601, v25:3147822051, g:0.06534},
+    {h:"2본부",t:"중형",n:"평택점",    c:8204,v26:3230066546, v25:3276326549, g:-0.01412},
+    {h:"3본부",t:"소형",n:"충장점",    c:8228,v26:3062020407, v25:2899473106, g:0.05606},
+    {h:"1본부",t:"소형",n:"광명점",    c:8217,v26:2987808928, v25:3081561342, g:-0.03042},
+    {h:"1본부",t:"소형",n:"부평점",    c:7216,v26:2419749769, v25:2546539328, g:-0.04979},
+    {h:"2본부",t:"소형",n:"천호2점",   c:7215,v26:2291894143, v25:2499890538, g:-0.08320},
+    {h:"4본부",t:"소형",n:"엑스코점",  c:8231,v26:2276360737, v25:2407643125, g:-0.05453},
+    {h:"3본부",t:"소형",n:"중앙로역점",c:8235,v26:2242092480, v25:2177446644, g:0.02969},
+    {h:"1본부",t:"소형",n:"안양점",    c:7206,v26:1773186172, v25:1899139977, g:-0.06632},
+    {h:"4본부",t:"소형",n:"구미점",    c:8503,v26:1490503312, v25:1445844444, g:0.03089},
+    {h:"4본부",t:"소형",n:"강북점",    c:8504,v26:1461304895, v25:1599107137, g:-0.08617},
+    {h:"4본부",t:"소형",n:"경산점",    c:8239,v26:1336799607, v25:1515558034, g:-0.11795},
+    {h:"3본부",t:"소형",n:"전주점",    c:8230,v26:1144628216, v25:1162983924, g:-0.01578},
+    {h:"4본부",t:"소형",n:"울산점",    c:8216,v26:1127121796, v25:1222372954, g:-0.07792},
+    {h:"3본부",t:"소형",n:"광주역점",  c:8233,v26:1110498416, v25:1086067490, g:0.02249},
+    {h:"4본부",t:"소형",n:"울산2점",   c:8219,v26:518146746,  v25:495510428,  g:0.04568},
+    {h:"#N/A", t:"소형",n:"논현점",    c:8226,v26:117301,     v25:1612465284, g:-0.99993}
+  ],
+  2:[
+    {h:"2본부",t:"대형",n:"강남점",    c:8206,v26:18659753052,v25:17818781828,g:0.04720},
+    {h:"1본부",t:"대형",n:"강서점",    c:8227,v26:16159017992,v25:14687899282,g:0.10016},
+    {h:"1본부",t:"대형",n:"부천점",    c:8222,v26:14076472173,v25:12280873209,g:0.14621},
+    {h:"2본부",t:"대형",n:"야탑점",    c:8202,v26:13994704342,v25:12460034580,g:0.12317},
+    {h:"2본부",t:"대형",n:"송파점",    c:8224,v26:12286783334,v25:11473438736,g:0.07089},
+    {h:"1본부",t:"대형",n:"평촌2점",   c:8205,v26:11520808131,v25:10491064882,g:0.09815},
+    {h:"1본부",t:"대형",n:"불광점",    c:7217,v26:10352319658,v25:8706209955, g:0.18907},
+    {h:"2본부",t:"대형",n:"신구로점",  c:8242,v26:10158505628,v25:8375868485, g:0.21283},
+    {h:"3본부",t:"대형",n:"대전유성점",c:8243,v26:9400070159, v25:8207848246, g:0.14525},
+    {h:"1본부",t:"대형",n:"일산점",    c:8201,v26:8226381441, v25:7232509689, g:0.13742},
+    {h:"2본부",t:"대형",n:"분당점",    c:7209,v26:8159654607, v25:7733509029, g:0.05510},
+    {h:"1본부",t:"대형",n:"고잔점",    c:7219,v26:7848228076, v25:7270108603, g:0.07952},
+    {h:"4본부",t:"중형",n:"쇼핑점",    c:8501,v26:6749291633, v25:6257467764, g:0.07860},
+    {h:"1본부",t:"대형",n:"인천점",    c:8203,v26:6499856148, v25:6363673233, g:0.02140},
+    {h:"2본부",t:"중형",n:"중계점",    c:7204,v26:5986504888, v25:5608528283, g:0.06739},
+    {h:"2본부",t:"중형",n:"동수원",    c:8208,v26:5526958469, v25:5648730974, g:-0.02156},
+    {h:"3본부",t:"중형",n:"해운대점",  c:7214,v26:4929496222, v25:4468243837, g:0.10323},
+    {h:"3본부",t:"중형",n:"부산대점",  c:8229,v26:4538105979, v25:4094116760, g:0.10845},
+    {h:"2본부",t:"중형",n:"수원터미널점",c:8237,v26:4435635414,v25:4236121311, g:0.04710},
+    {h:"3본부",t:"중형",n:"순천점",    c:8212,v26:4167634598, v25:4448145835, g:-0.06306},
+    {h:"3본부",t:"중형",n:"창원점",    c:8220,v26:3890583836, v25:3435145875, g:0.13258},
+    {h:"3본부",t:"소형",n:"청주점",    c:8241,v26:3621972580, v25:3177780274, g:0.13978},
+    {h:"3본부",t:"중형",n:"괴정점",    c:8218,v26:3577953105, v25:3281494942, g:0.09034},
+    {h:"3본부",t:"소형",n:"충장점",    c:8228,v26:3516223373, v25:2759071671, g:0.27442},
+    {h:"1본부",t:"소형",n:"산본점",    c:8215,v26:3403697425, v25:2621366296, g:0.29844},
+    {h:"3본부",t:"소형",n:"덕천점",    c:8223,v26:3257330720, v25:2549982286, g:0.27739},
+    {h:"4본부",t:"소형",n:"수성점",    c:8502,v26:3236944966, v25:2957715456, g:0.09441},
+    {h:"2본부",t:"중형",n:"평택점",    c:8204,v26:3122028594, v25:3145603879, g:-0.00749},
+    {h:"1본부",t:"소형",n:"광명점",    c:8217,v26:2769786839, v25:2608012786, g:0.06203},
+    {h:"3본부",t:"소형",n:"중앙로역점",c:8235,v26:2377399178, v25:2172469232, g:0.09433},
+    {h:"2본부",t:"소형",n:"천호2점",   c:7215,v26:2290401925, v25:2319038830, g:-0.01235},
+    {h:"4본부",t:"소형",n:"엑스코점",  c:8231,v26:2223027794, v25:2097515096, g:0.05984},
+    {h:"1본부",t:"소형",n:"부평점",    c:7216,v26:2218631291, v25:2236028833, g:-0.00778},
+    {h:"1본부",t:"소형",n:"안양점",    c:7206,v26:1724889164, v25:1830259145, g:-0.05757},
+    {h:"3본부",t:"소형",n:"전주점",    c:8230,v26:1442739535, v25:1193336893, g:0.20900},
+    {h:"4본부",t:"소형",n:"경산점",    c:8239,v26:1360893593, v25:1361606350, g:-0.00052},
+    {h:"4본부",t:"소형",n:"강북점",    c:8504,v26:1330687294, v25:1340986284, g:-0.00768},
+    {h:"4본부",t:"소형",n:"구미점",    c:8503,v26:1282973536, v25:1344523463, g:-0.04578},
+    {h:"4본부",t:"소형",n:"울산점",    c:8216,v26:1151041022, v25:1081383583, g:0.06442},
+    {h:"3본부",t:"소형",n:"광주역점",  c:8233,v26:882701307,  v25:1081429530, g:-0.18376},
+    {h:"4본부",t:"소형",n:"울산2점",   c:8219,v26:454844791,  v25:392245674,  g:0.15959},
+    {h:"#N/A", t:"소형",n:"논현점",    c:8226,v26:0,          v25:1432178967, g:-1.0}
+  ],
+  3:[
+    {h:"2본부",t:"대형",n:"강남점",    c:8206,v26:21900644102,v25:22625707383,g:-0.03205},
+    {h:"1본부",t:"대형",n:"강서점",    c:8227,v26:19115037477,v25:18699122737,g:0.02224},
+    {h:"2본부",t:"대형",n:"야탑점",    c:8202,v26:16892875578,v25:16801153498,g:0.00546},
+    {h:"1본부",t:"대형",n:"부천점",    c:8222,v26:16188967583,v25:15705305029,g:0.03080},
+    {h:"2본부",t:"대형",n:"송파점",    c:8224,v26:15774284660,v25:16775036975,g:-0.05966},
+    {h:"1본부",t:"대형",n:"평촌2점",   c:8205,v26:14095238082,v25:13327696631,g:0.05759},
+    {h:"1본부",t:"대형",n:"불광점",    c:7217,v26:12452088170,v25:11648589398,g:0.06898},
+    {h:"2본부",t:"대형",n:"신구로점",  c:8242,v26:11592716382,v25:10650709209,g:0.08845},
+    {h:"3본부",t:"대형",n:"대전유성점",c:8243,v26:10958621088,v25:10393232725,g:0.05440},
+    {h:"1본부",t:"대형",n:"일산점",    c:8201,v26:10578841016,v25:10076319888,g:0.04987},
+    {h:"1본부",t:"대형",n:"고잔점",    c:7219,v26:9870372325, v25:10094356054,g:-0.02219},
+    {h:"2본부",t:"대형",n:"분당점",    c:7209,v26:9423834872, v25:9509889879, g:-0.00905},
+    {h:"1본부",t:"대형",n:"인천점",    c:8203,v26:9003960891, v25:8439508578, g:0.06688},
+    {h:"4본부",t:"중형",n:"쇼핑점",    c:8501,v26:8542487545, v25:7921304914, g:0.07842},
+    {h:"2본부",t:"중형",n:"중계점",    c:7204,v26:7599718330, v25:7876151467, g:-0.03510},
+    {h:"2본부",t:"중형",n:"동수원",    c:8208,v26:7405861906, v25:7812242529, g:-0.05202},
+    {h:"3본부",t:"중형",n:"부산대점",  c:8229,v26:7138162915, v25:6990110037, g:0.02118},
+    {h:"3본부",t:"중형",n:"순천점",    c:8212,v26:6007138591, v25:6226790948, g:-0.03528},
+    {h:"3본부",t:"중형",n:"해운대점",  c:7214,v26:5727058245, v25:5727621599, g:-0.00010},
+    {h:"3본부",t:"중형",n:"창원점",    c:8220,v26:5625581449, v25:5882290739, g:-0.04364},
+    {h:"2본부",t:"중형",n:"수원터미널점",c:8237,v26:5429676274,v25:5738304753, g:-0.05378},
+    {h:"3본부",t:"소형",n:"충장점",    c:8228,v26:4626404220, v25:4121172796, g:0.12259},
+    {h:"3본부",t:"소형",n:"청주점",    c:8241,v26:4560200495, v25:4354630542, g:0.04721},
+    {h:"1본부",t:"소형",n:"산본점",    c:8215,v26:4280468015, v25:3761241912, g:0.13805},
+    {h:"3본부",t:"중형",n:"괴정점",    c:8218,v26:4209743138, v25:4475316921, g:-0.05934},
+    {h:"2본부",t:"중형",n:"평택점",    c:8204,v26:4174129858, v25:4418961715, g:-0.05540},
+    {h:"3본부",t:"소형",n:"덕천점",    c:8223,v26:4065840167, v25:3595466252, g:0.13082},
+    {h:"4본부",t:"소형",n:"수성점",    c:8502,v26:3607630045, v25:3776185917, g:-0.04464},
+    {h:"4본부",t:"소형",n:"엑스코점",  c:8231,v26:3146626572, v25:3626331893, g:-0.13228},
+    {h:"1본부",t:"소형",n:"광명점",    c:8217,v26:3141560758, v25:3249490702, g:-0.03321},
+    {h:"2본부",t:"소형",n:"천호2점",   c:7215,v26:3061725423, v25:3148370482, g:-0.02752},
+    {h:"1본부",t:"소형",n:"부평점",    c:7216,v26:2932671471, v25:2935917465, g:-0.00111},
+    {h:"3본부",t:"소형",n:"중앙로역점",c:8235,v26:2863858725, v25:2792598172, g:0.02552},
+    {h:"1본부",t:"소형",n:"안양점",    c:7206,v26:2055218805, v25:2459999540, g:-0.16455},
+    {h:"4본부",t:"소형",n:"구미점",    c:8503,v26:1967773269, v25:1807833766, g:0.08847},
+    {h:"4본부",t:"소형",n:"경산점",    c:8239,v26:1778425036, v25:1947132995, g:-0.08664},
+    {h:"4본부",t:"소형",n:"강북점",    c:8504,v26:1767747084, v25:1873109597, g:-0.05625},
+    {h:"3본부",t:"소형",n:"전주점",    c:8230,v26:1476575330, v25:1488568726, g:-0.00806},
+    {h:"4본부",t:"소형",n:"울산점",    c:8216,v26:1323613840, v25:1450283690, g:-0.08734},
+    {h:"3본부",t:"소형",n:"광주역점",  c:8233,v26:1314244637, v25:1618256784, g:-0.18786},
+    {h:"4본부",t:"소형",n:"울산2점",   c:8219,v26:605462750,  v25:610879916,  g:-0.00887},
+    {h:"#N/A", t:"소형",n:"논현점",    c:8226,v26:0,          v25:2137816060, g:-1.0}
+  ],
+  4:[
+    {h:"2본부",t:"대형",n:"강남점",    c:8206,v26:4512379762,v25:4075278906,g:0.10726},
+    {h:"1본부",t:"대형",n:"강서점",    c:8227,v26:4218557304,v25:3348022683,g:0.26001},
+    {h:"2본부",t:"대형",n:"야탑점",    c:8202,v26:3736574659,v25:3070713991,g:0.21684},
+    {h:"1본부",t:"대형",n:"부천점",    c:8222,v26:3448593927,v25:2847379886,g:0.21115},
+    {h:"2본부",t:"대형",n:"송파점",    c:8224,v26:3335075374,v25:2897485247,g:0.15102},
+    {h:"1본부",t:"대형",n:"평촌2점",   c:8205,v26:3078193580,v25:2459965373,g:0.25132},
+    {h:"1본부",t:"대형",n:"불광점",    c:7217,v26:2736390395,v25:2247336585,g:0.21761},
+    {h:"2본부",t:"대형",n:"신구로점",  c:8242,v26:2445126618,v25:1950972709,g:0.25329},
+    {h:"1본부",t:"대형",n:"일산점",    c:8201,v26:2279941216,v25:1876340137,g:0.21510},
+    {h:"3본부",t:"대형",n:"대전유성점",c:8243,v26:2131616830,v25:1718781154,g:0.24019},
+    {h:"1본부",t:"대형",n:"고잔점",    c:7219,v26:2115798166,v25:1649899630,g:0.28238},
+    {h:"2본부",t:"대형",n:"분당점",    c:7209,v26:2035431308,v25:1651941508,g:0.23214},
+    {h:"1본부",t:"대형",n:"인천점",    c:8203,v26:1889045838,v25:1478766328,g:0.27745},
+    {h:"4본부",t:"중형",n:"쇼핑점",    c:8501,v26:1688213887,v25:1306684858,g:0.29198},
+    {h:"2본부",t:"중형",n:"동수원",    c:8208,v26:1583169080,v25:1324961899,g:0.19488},
+    {h:"2본부",t:"중형",n:"중계점",    c:7204,v26:1556889275,v25:1291790072,g:0.20522},
+    {h:"3본부",t:"중형",n:"해운대점",  c:7214,v26:1232802038,v25:1101789330,g:0.11891},
+    {h:"3본부",t:"중형",n:"창원점",    c:8220,v26:1210215453,v25:962303418, g:0.25762},
+    {h:"3본부",t:"중형",n:"부산대점",  c:8229,v26:1208332008,v25:1098381703,g:0.10010},
+    {h:"3본부",t:"중형",n:"순천점",    c:8212,v26:1174475027,v25:1083810624,g:0.08365},
+    {h:"2본부",t:"중형",n:"수원터미널점",c:8237,v26:1053807544,v25:939989836, g:0.12108},
+    {h:"1본부",t:"소형",n:"산본점",    c:8215,v26:961950344, v25:674827472, g:0.42548},
+    {h:"3본부",t:"중형",n:"괴정점",    c:8218,v26:896819947, v25:818124559, g:0.09619},
+    {h:"3본부",t:"소형",n:"충장점",    c:8228,v26:866035269, v25:662338999, g:0.30754},
+    {h:"3본부",t:"소형",n:"덕천점",    c:8223,v26:858242904, v25:554910203, g:0.54663},
+    {h:"2본부",t:"중형",n:"평택점",    c:8204,v26:807479727, v25:744120219, g:0.08515},
+    {h:"3본부",t:"소형",n:"청주점",    c:8241,v26:786621385, v25:691754174, g:0.13714},
+    {h:"4본부",t:"소형",n:"수성점",    c:8502,v26:784269246, v25:704516107, g:0.11320},
+    {h:"1본부",t:"소형",n:"광명점",    c:8217,v26:723899444, v25:642845094, g:0.12609},
+    {h:"4본부",t:"소형",n:"엑스코점",  c:8231,v26:612755357, v25:566588507, g:0.08148},
+    {h:"1본부",t:"소형",n:"부평점",    c:7216,v26:608770508, v25:521583708, g:0.16716},
+    {h:"2본부",t:"소형",n:"천호2점",   c:7215,v26:597098319, v25:513930313, g:0.16183},
+    {h:"3본부",t:"소형",n:"중앙로역점",c:8235,v26:523533750, v25:449034450, g:0.16591},
+    {h:"4본부",t:"소형",n:"경산점",    c:8239,v26:365966152, v25:319725096, g:0.14463},
+    {h:"4본부",t:"소형",n:"강북점",    c:8504,v26:335418025, v25:362611213, g:-0.07499},
+    {h:"1본부",t:"소형",n:"안양점",    c:7206,v26:332086228, v25:463599555, g:-0.28368},
+    {h:"4본부",t:"소형",n:"구미점",    c:8503,v26:290143265, v25:281193211, g:0.03183},
+    {h:"3본부",t:"소형",n:"전주점",    c:8230,v26:285052159, v25:232877354, g:0.22404},
+    {h:"4본부",t:"소형",n:"울산점",    c:8216,v26:244195141, v25:222397483, g:0.09801},
+    {h:"4본부",t:"소형",n:"울산2점",   c:8219,v26:209409630, v25:115304544, g:0.81614},
+    {h:"3본부",t:"소형",n:"광주역점",  c:8233,v26:205455450, v25:241307179, g:-0.14857},
+    {h:"#N/A", t:"소형",n:"논현점",    c:8226,v26:0,         v25:374438936, g:-1.0}
+  ]
+};
+// 하위호환: BRANCHES4 = 4월 데이터
+const BRANCHES4=BRANCHES[4];
+
+const TYPE_SUMM={
+  1:{리:{v26:243258206416,v25:240354657679,g:0.01208},L:{v26:155618925684,v25:150582181358,g:0.03345},M:{v26:48487903815,v25:48854308607,g:-0.00750},S:{v26:39151376917,v25:40921178640,g:-0.04325}},
+  2:{리:{v26:232812933812,v25:214282349866,g:0.08648},L:{v26:147342554741,v25:133101819757,g:0.10699},M:{v26:46924192738,v25:44623599460,g:0.05156},S:{v26:38546186333,v25:36556930649,g:0.05442}},
+  3:{리:{v26:288283087119,v25:288571010813,g:-0.00100},L:{v26:177847482226,v25:174746627984,g:0.01774},M:{v26:61859558251,v25:63069095622,g:-0.01918},S:{v26:48576046642,v25:50755287207,g:-0.04294}},
+  4:{리:{v26:59965831539, v25:50540624253, g:0.18649},L:{v26:37962724977,v25:31272884137,g:0.21392},M:{v26:12412203986,v25:10671956518,g:0.16307},S:{v26:9590902576,v25:8595783598,g:0.11577}}
+};
+const HQ_G={
+  1:{"1본부":0.03664,"2본부":0.01447,"3본부":0.00510,"4본부":-0.00741},
+  2:{"1본부":0.11100,"2본부":0.07360,"3본부":0.11581,"4본부":0.05681},
+  3:{"1본부":0.03304,"2본부":-0.01994,"3본부":0.01573,"4본부":-0.01188},
+  4:{"1본부":0.22968,"2본부":0.17344,"3본부":0.18343,"4본부":0.16792}
+};
+
+// 안양점 4월 30일 일별 데이터 (RAW ABCD 직접 추출)
+const DAILY_REAL={
+  안양점:[
+    {d:1, v26:51127958,  v25:0},         {d:2, v26:36428060,  v25:98876577},
+    {d:3, v26:51081790,  v25:75179147},   {d:4, v26:76799660,  v25:70175319},
+    {d:5, v26:49021600,  v25:66321628},   {d:6, v26:31876690,  v25:87695611},
+    {d:7, v26:35750470,  v25:65351273},   {d:8, v26:0,         v25:68516899},
+    {d:9, v26:0,         v25:76191300},   {d:10,v26:0,         v25:71346526},
+    {d:11,v26:0,         v25:70126960},   {d:12,v26:0,         v25:74157078},
+    {d:13,v26:0,         v25:59984336},   {d:14,v26:0,         v25:47468117},
+    {d:15,v26:0,         v25:67753965},   {d:16,v26:0,         v25:151278422},
+    {d:17,v26:0,         v25:97291813},   {d:18,v26:0,         v25:92981100},
+    {d:19,v26:0,         v25:84371393},   {d:20,v26:0,         v25:93120898},
+    {d:21,v26:0,         v25:81944090},   {d:22,v26:0,         v25:63709309},
+    {d:23,v26:0,         v25:94706375},   {d:24,v26:0,         v25:73733957},
+    {d:25,v26:0,         v25:83507119},   {d:26,v26:0,         v25:94701610},
+    {d:27,v26:0,         v25:75547484},   {d:28,v26:0,         v25:69287855},
+    {d:29,v26:0,         v25:70073369},   {d:30,v26:0,         v25:112519326}
+  ]
+};
+
+// 누적 분석 일별 원데이터 (RAW 기반 전지점 합산)
+const DAILY_IND={
+  1:[{d:1,y26:13772787161,y25:10658716447},{d:2,y26:7140919526,y25:5800305972},{d:3,y26:10766957889,y25:6180482324},{d:4,y26:9017819947,y25:10448663450},{d:5,y26:4895405808,y25:7718959607},{d:6,y26:5931315504,y25:4841080077},{d:7,y26:9872854013,y25:5580041689},{d:8,y26:7081109249,y25:10184449642},{d:9,y26:7434305539,y25:6241423847},{d:10,y26:11151414416,y25:7286096548},{d:11,y26:10475526785,y25:11608565621},{d:12,y26:4769444075,y25:10523217207},{d:13,y26:5819060582,y25:4823123196},{d:14,y26:7038452821,y25:5883064877},{d:15,y26:6392698187,y25:7299176155},{d:16,y26:6511939922,y25:6143307531},{d:17,y26:11178483085,y25:6651817585},{d:18,y26:9044702559,y25:11002207850},{d:19,y26:4575324210,y25:8926692822},{d:20,y26:5443632609,y25:5121896243},{d:21,y26:9794740263,y25:5548901435},{d:22,y26:6609432317,y25:10408968871},{d:23,y26:7165325014,y25:6477610648},{d:24,y26:11439581287,y25:7420737740},{d:25,y26:10615326354,y25:11288478985},{d:26,y26:1305908427,y25:10815269024},{d:27,y26:6481786279,y25:9119312348},{d:28,y26:7428044073,y25:7989895243},{d:29,y26:6296721520,y25:693286000},{d:30,y26:7117184635,y25:8983362059},{d:31,y26:10690002360,y25:8685546636}],
+  2:[{d:1,y26:12533291993,y25:9779353612},{d:2,y26:4660896637,y25:8408873332},{d:3,y26:5415079236,y25:4402745522},{d:4,y26:9300854465,y25:4632412630},{d:5,y26:6929057175,y25:6014778135},{d:6,y26:7157358130,y25:5216926570},{d:7,y26:11603038392,y25:5609549563},{d:8,y26:10261031294,y25:11351393086},{d:9,y26:5251429838,y25:10377070517},{d:10,y26:5837515581,y25:1011312754},{d:11,y26:8833876149,y25:6403744483},{d:12,y26:7143868241,y25:8619586913},{d:13,y26:7707397159,y25:7398613357},{d:14,y26:12193708205,y25:7438446072},{d:15,y26:10896783155,y25:11847437278},{d:16,y26:9493471926,y25:10479215033},{d:17,y26:687325674,y25:5218813973},{d:18,y26:11149402361,y25:5681777502},{d:19,y26:6526635160,y25:7735055054},{d:20,y26:7158695120,y25:6775301508},{d:21,y26:12367927552,y25:7220415622},{d:22,y26:11164090252,y25:12604287642},{d:23,y26:5429040377,y25:11388909664},{d:24,y26:5665510390,y25:5428306468},{d:25,y26:7838162404,y25:6402517076},{d:26,y26:7009026528,y25:9715785515},{d:27,y26:8238540171,y25:7581572055},{d:28,y26:14359920247,y25:9538148930}],
+  3:[{d:1,y26:23235904264,y25:20982769889},{d:2,y26:13196782323,y25:13942787784},{d:3,y26:6136640637,y25:13533079893},{d:4,y26:9240993964,y25:5100737577},{d:5,y26:6791238633,y25:6705934023},{d:6,y26:6832732121,y25:6324794849},{d:7,y26:13369183516,y25:6724801375},{d:8,y26:11971011942,y25:12965114095},{d:9,y26:5064930567,y25:12292897921},{d:10,y26:5766121128,y25:5290755954},{d:11,y26:7850327377,y25:6051538913},{d:12,y26:6840643865,y25:9544211899},{d:13,y26:7441439829,y25:7319973164},{d:14,y26:14293545454,y25:7752405826},{d:15,y26:11779942419,y25:14588364611},{d:16,y26:5665326804,y25:11556341388},{d:17,y26:6668438473,y25:5250463709},{d:18,y26:8630331425,y25:5253076232},{d:19,y26:7297402633,y25:9223687482},{d:20,y26:8745028598,y25:6935816970},{d:21,y26:14214296723,y25:8360587183},{d:22,y26:12735614933,y25:14093132948},{d:23,y26:5619604209,y25:13157690361},{d:24,y26:6894108395,y25:5680086059},{d:25,y26:8674462699,y25:6880463530},{d:26,y26:7290637195,y25:8130824556},{d:27,y26:7872844394,y25:6459281767},{d:28,y26:14784037364,y25:7222430526},{d:29,y26:12433877999,y25:12989208144},{d:30,y26:5636979057,y25:10855192365},{d:31,y26:5308658179,y25:7402559820}],
+  4:[{d:1,y26:8566710150,y25:null},{d:2,y26:7238383589,y25:8323898563},{d:3,y26:7626961939,y25:6670725541},{d:4,y26:14095706983,y25:6866857495},{d:5,y26:11959561314,y25:11876044513},{d:6,y26:5081988713,y25:11454879951},{d:7,y26:5396518851,y25:5348218190},{d:8,y26:null,y25:null},{d:9,y26:null,y25:null},{d:10,y26:null,y25:null},{d:11,y26:null,y25:null},{d:12,y26:null,y25:null},{d:13,y26:null,y25:null},{d:14,y26:null,y25:null},{d:15,y26:null,y25:null},{d:16,y26:null,y25:null},{d:17,y26:null,y25:null},{d:18,y26:null,y25:null},{d:19,y26:null,y25:null},{d:20,y26:null,y25:null},{d:21,y26:null,y25:null},{d:22,y26:null,y25:null},{d:23,y26:null,y25:null},{d:24,y26:null,y25:null},{d:25,y26:null,y25:null},{d:26,y26:null,y25:null},{d:27,y26:null,y25:null},{d:28,y26:null,y25:null},{d:29,y26:null,y25:null},{d:30,y26:null,y25:null}]
+};
+const CUM_ANNUAL=[
+  {d:'1월',y26:243258206416,y25:240354657679},
+  {d:'2월',y26:476071140228,y25:454637007545},
+  {d:'3월',y26:764354227347,y25:743208018358},
+  {d:'4월(현재)',y26:824320058886,y25:793748642611}
+];
+
+// ── UTILS ──
+function fp(g){if(g===null||g===undefined)return'—';if(g===-1)return'-100.0%';return(g>=0?'+':'')+(g*100).toFixed(1)+'%';} // 소수점1자리 고정
+function gc(g){if(g===null||g===undefined)return'nt';return g>0?'pos':g<0?'neg':'nt';}
+function fb(n){if(!n&&n!==0)return'—';if(n>=1e8)return(n/1e8).toFixed(1)+'억';if(n>=1e4)return Math.round(n/1e4)+'만';return n.toLocaleString();}
+function hqCls(h){return{'1본부':'tg-h1','2본부':'tg-h2','3본부':'tg-h3','4본부':'tg-h4'}[h]||'tg-x';}
+function tyCls(t){return{대형:'tg-L',중형:'tg-M',소형:'tg-S'}[t]||'tg-x';}
+function getBranches(m){
+  const raw=(BRANCHES[m]||BRANCHES[4]).filter(b=>b.n!=='서면점');
+  const sorted=[...raw].sort((a,b)=>{
+    if(a.n==='논현점')return 1;if(b.n==='논현점')return -1;
+    const ho={'1본부':1,'2본부':2,'3본부':3,'4본부':4};
+    if((ho[a.h]||9)!==(ho[b.h]||9))return(ho[a.h]||9)-(ho[b.h]||9);
+    return b.v26-a.v26;
+  });
+  return sorted;
+}
+
+// ── STATE ──
+let S={month:4,filter:null,selBranch:null,period:'daily',sortKey:'growth',sortDir:'desc'};
+let dataLoaded=true; // 하드코딩 데이터 이미 있음
+
+// ══════ API 설정 ══════
+const API_URL = "https://script.google.com/macros/s/AKfycbwzIXyhI-KgkI7ym7kAN-wSvrJcMO6wVT2RqiDsH11P3me9XL86Lv4t3Z9Q-TFcFe1nig/exec";
+let API_RAW = []; // API에서 받은 원본 데이터
+let USE_API = false; // API 연동 성공 여부
+
+// ── REFRESH: API 실시간 연동 ──
+async function refreshData(){
+  const icon=document.getElementById('refresh-icon');
+  icon.style.animation='spin 1s linear infinite';
+  
+  // 상태 표시
+  const btn = icon.closest('button') || icon.parentElement;
+  const origText = btn ? btn.textContent.trim() : '';
+  
+  try {
+    const response = await fetch(API_URL);
+    if(!response.ok) throw new Error('HTTP '+response.status);
+    const data = await response.json();
+    
+    if(!data || data.length === 0) throw new Error('No Data');
+    
+    // API 데이터를 내부 구조로 변환
+    API_RAW = data;
+    USE_API = true;
+    processAPIData(data);
+    
+    // 성공 메시지
+    showToast('✅ 데이터 최신화 완료');
+    const badge = document.getElementById('api-badge');
+    if(badge){ badge.textContent='🟢 실시간'; badge.style.background='#e6f9f4'; badge.style.color='#00b386'; }
+    
+  } catch(e) {
+    console.warn('API 연동 실패, 하드코딩 데이터 사용:', e.message);
+    USE_API = false;
+    showToast('⚠️ API 연결 실패 — 저장된 데이터로 표시');
+    const badge2 = document.getElementById('api-badge');
+    if(badge2){ badge2.textContent='⚡ 로컬 데이터'; badge2.style.background='#fff3e0'; badge2.style.color='#f57c00'; }
+    // 기존 하드코딩 데이터로 init
+    if(!dataLoaded){
+      dataLoaded=true;
+      document.getElementById('empty-state').style.display='none';
+      document.getElementById('dashboard-content').style.display='block';
+      init();
+    }
+  } finally {
+    icon.style.animation='';
+  }
+}
+
+// API JSON → 내부 BRANCHES / TYPE_SUMM / HQ_G / DAILY_REAL 구조로 변환
+function processAPIData(raw){
+  const num = v => { if(!v && v!==0) return 0; return Number(String(v).replace(/,/g,'')) || 0; };
+  
+  // 지점별 월별 집계
+  const monthBranch = {}; // {month: {branchName: {h,t,n,c,v26,v25,days:[]}}}
+  const dayData = {};     // {month: {branchName: {day: {v26,v25}}}}
+  
+  raw.forEach(r => {
+    const m = num(r.Month || r.month || r.월);
+    const name = (r.Name || r.name || r.지점 || r.지점명 || '').trim();
+    const hq = (r.HQ || r.hq || r.본부 || '—').trim();
+    const type = (r.Type || r.type || r.구분 || '—').trim();
+    const code = num(r.Code || r.code || r.코드 || 0);
+    const v25 = num(r.v25 || r['2025'] || 0);
+    const v26 = num(r.v26 || r['2026'] || 0);
+    const day = num(r.DAY || r.Day || r.day || r.일 || 0);
+    
+    if(!m || !name) return;
+
+    // ── 핵심: v26 > 0인 날짜만 집계 ──────────────────────────
+    // 매출은 새벽에 전산팀이 일괄 업로드하므로,
+    // v26=0인 행은 아직 업로드 안 된 미래 날짜임.
+    // v26이 있는 날짜까지만 v25도 함께 합산해야 정확한 동요일 비교가 됨.
+    // DAY 1은 v25=0인 경우가 있으므로(1/1 신정 등) v26 기준으로만 판단.
+    const hasData = v26 > 0;
+    // ────────────────────────────────────────────────────────
+    
+    // 월별 지점 집계 (v26 있는 날만)
+    if(hasData){
+      if(!monthBranch[m]) monthBranch[m] = {};
+      if(!monthBranch[m][name]) monthBranch[m][name] = {h:hq, t:type, n:name, c:code, v26:0, v25:0};
+      monthBranch[m][name].v26 += v26;
+      monthBranch[m][name].v25 += v25;  // 동요일 대응 전년 실적
+    }
+    
+    // 일별 집계 (v26 유무 관계없이 저장 — 차트용)
+    if(day > 0){
+      if(!dayData[m]) dayData[m] = {};
+      if(!dayData[m][name]) dayData[m][name] = {};
+      if(!dayData[m][name][day]) dayData[m][name][day] = {v26:0, v25:0};
+      dayData[m][name][day].v26 += v26;
+      dayData[m][name][day].v25 += v25;
+    }
+  });
+  
+  // BRANCHES 갱신
+  [1,2,3,4].forEach(m => {
+    if(!monthBranch[m]) return;
+    BRANCHES[m] = Object.values(monthBranch[m]).map(b => {
+      const g = b.v25 > 0 ? (b.v26 - b.v25) / b.v25 : (b.v26 > 0 ? 0 : -1);
+      return {...b, g: Math.round(g * 100000) / 100000};
+    }).sort((a,b) => b.v26 - a.v26);
+    
+    // TYPE_SUMM 재계산
+    const all = BRANCHES[m];
+    const sumType = (key, filter) => {
+      const f = all.filter(filter);
+      const v26 = f.reduce((s,b)=>s+b.v26,0);
+      const v25 = f.reduce((s,b)=>s+b.v25,0);
+      return {v26, v25, g: v25>0?(v26-v25)/v25:0, up:f.filter(b=>b.g>0).length, dn:f.filter(b=>b.g<0).length};
+    };
+    TYPE_SUMM[m] = {
+      리: sumType('리', ()=>true),
+      L: sumType('L', b=>b.t==='대형'),
+      M: sumType('M', b=>b.t==='중형'),
+      S: sumType('S', b=>b.t==='소형')
+    };
+    
+    // HQ_G 재계산
+    HQ_G[m] = {};
+    ['1본부','2본부','3본부','4본부'].forEach(hq => {
+      const f = all.filter(b=>b.h===hq);
+      const v26 = f.reduce((s,b)=>s+b.v26,0);
+      const v25 = f.reduce((s,b)=>s+b.v25,0);
+      HQ_G[m][hq] = v25>0?(v26-v25)/v25:0;
+    });
+  });
+  
+  // DAILY_REAL 갱신 (일별 지점 데이터)
+  Object.keys(dayData).forEach(m => {
+    Object.keys(dayData[m]).forEach(name => {
+      const days = dayData[m][name];
+      const maxD = Math.max(...Object.keys(days).map(Number));
+      DAILY_REAL[name] = Array.from({length:maxD}, (_,i) => {
+        const d = days[i+1] || {v26:0, v25:0};
+        return {d:i+1, v26:d.v26, v25:d.v25};
+      });
+    });
+  });
+  
+  // UI 갱신
+  dataLoaded = true;
+  document.getElementById('empty-state').style.display='none';
+  document.getElementById('dashboard-content').style.display='block';
+  init();
+}
+
+// 토스트 메시지
+function showToast(msg){
+  let t = document.getElementById('toast-msg');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'toast-msg';
+    t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#191f28;color:#fff;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;z-index:9999;transition:opacity .3s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.style.opacity = '0', 2500);
+}
+
+// ── MONTH ──
+function onMonth(){
+  S.month=parseInt(document.getElementById('gmonth').value);
+  S.selBranch=null;S.filter=null;
+  updateSummary();renderRanks();renderFilterRow();renderBranchTable();resetDaily();
+}
+function updateSummary(){
+  const r=TYPE_SUMM[S.month].리;
+  const el=document.getElementById('s-total');
+  el.textContent=fp(r.g);el.className='retail-pct '+gc(r.g);
+  document.getElementById('s-act').textContent=fb(r.v26||0);
+  document.getElementById('s-prv').textContent=fb(r.v25||0);
+}
+
+// ── RANKS ──
+function mkRCard(b){
+  const s=S.selBranch===b.n;
+  return`<div class="rcard${s?' sel':''}" onclick="selBranch('${b.n}')">
+    <div class="rcard-tags">
+      <span class="tag ${tyCls(b.t)}">${b.t}</span>
+      <span class="tag ${hqCls(b.h)}">${b.h}</span>
+    </div>
+    <div class="rcard-name">${b.n}</div>
+    <div class="rcard-val ${gc(b.g)}">${fp(b.g)}</div>
+  </div>`;
+}
+function renderRanks(){
+  const list=getBranches(S.month).filter(b=>b.v25>0&&b.g>-1.5).sort((a,b)=>b.g-a.g);
+  document.getElementById('top5').innerHTML=list.slice(0,5).map(mkRCard).join('');
+  document.getElementById('bot5').innerHTML=[...list].reverse().slice(0,5).map(mkRCard).join('');
+}
+
+// ── FILTER ROW ──
+function renderFilterRow(){
+  const m=S.month,ts=TYPE_SUMM[m],hqg=HQ_G[m]||HQ_G[4];
+  const filters=[
+    {k:null,l:'전체',g:ts.리.g},
+    {k:'대형',l:'대형',g:ts.L.g},{k:'중형',l:'중형',g:ts.M.g},{k:'소형',l:'소형',g:ts.S.g},
+    {k:'1본부',l:'1본부',g:hqg['1본부']},{k:'2본부',l:'2본부',g:hqg['2본부']},
+    {k:'3본부',l:'3본부',g:hqg['3본부']},{k:'4본부',l:'4본부',g:hqg['4본부']}
+  ];
+  document.getElementById('filter-row').innerHTML=filters.map(f=>{
+    const isAct=S.filter===f.k;
+    return`<button class="fbtn${isAct?' active':''}" onclick="setFilter(${f.k===null?'null':"'"+f.k+"'"})">
+      <span class="fbtn-name">${f.l}</span>
+      <span class="fbtn-val ${isAct?'':''+gc(f.g)}">${fp(f.g)}</span>
+    </button>`;
+  }).join('');
+}
+function setFilter(k){
+  S.filter=(k==='null'||k===undefined)?null:k;
+  S.selBranch=null;renderFilterRow();renderBranchTable();resetDaily();
+}
+
+// ── BRANCH TABLE ──
+function renderBranchTable(){
+  let list=getBranches(S.month);
+  if(S.filter){
+    if(['대형','중형','소형'].includes(S.filter))list=list.filter(b=>b.t===S.filter);
+    else list=list.filter(b=>b.h===S.filter);
+  }
+  list.sort((a,b)=>{
+    if(S.sortKey==='hq'||S.sortKey==='name'){
+      if(a.n==='논현점')return 1;if(b.n==='논현점')return -1;
+    }
+    if(S.sortKey==='hq'){const r=a.h.localeCompare(b.h);return S.sortDir==='asc'?r:-r;}
+    if(S.sortKey==='type'){const o={대형:0,중형:1,소형:2};const r=(o[a.t]||3)-(o[b.t]||3);return S.sortDir==='asc'?r:-r;}
+    if(S.sortKey==='name'){const r=a.n.localeCompare(b.n);return S.sortDir==='asc'?r:-r;}
+    const av=a[S.sortKey==='actual'?'v26':S.sortKey==='prev'?'v25':'g']||0;
+    const bv=b[S.sortKey==='actual'?'v26':S.sortKey==='prev'?'v25':'g']||0;
+    return S.sortDir==='asc'?av-bv:bv-av;
+  });
+  document.getElementById('btbody').innerHTML=list.map(b=>`
+    <tr class="${S.selBranch===b.n?'sel':''}" onclick="selBranch('${b.n}')">
+      <td><span class="tag tag-xs ${hqCls(b.h)}">${b.h}</span></td>
+      <td><span class="tag tag-xs ${tyCls(b.t)}">${b.t}</span></td>
+      <td style="font-weight:700">${b.n}</td>
+      <td style="text-align:right;color:#ff4d4f;font-family:'JetBrains Mono',monospace">${fb(b.v25)}</td>
+      <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace">${fb(b.v26)}</td>
+      <td style="text-align:right;font-weight:900;font-family:'JetBrains Mono',monospace" class="${gc(b.g)}">${fp(b.g)}</td>
+    </tr>`).join('');
+  // 정렬 아이콘 — ▲▼↕
+  ['hq','type','name','prev','actual','growth'].forEach(k=>{
+    const el=document.getElementById('sh-'+k);
+    if(el)el.textContent=S.sortKey===k?(S.sortDir==='asc'?'▲':'▼'):'↕';
+  });
+}
+function toggleSort(key){
+  S.sortDir=S.sortKey===key&&S.sortDir==='desc'?'asc':'desc';
+  S.sortKey=key;renderBranchTable();
+}
+
+// ── DAILY ──
+function selBranch(name){
+  S.selBranch=name;
+  document.getElementById('dp-name').textContent=name;
+  renderBranchTable();renderRanks();
+  renderDailyChart(name);renderDailyTable(name);
+}
+function resetDaily(){
+  S.selBranch=null;
+  document.getElementById('dp-name').textContent='지점명';
+  document.getElementById('chart-area').innerHTML='<div class="chart-empty">지점을 선택해주세요</div>';
+  document.getElementById('dtbody').innerHTML='<tr><td colspan="4" style="text-align:center;color:#8b95a1;padding:20px">지점을 선택해주세요</td></tr>';
+}
+function getDailyRows(name){
+  // 실제 데이터가 있으면 사용 (현재 안양점 4월만)
+  if(DAILY_REAL[name]&&S.month===4)return DAILY_REAL[name].map(r=>{
+    const g=r.v25>0?(r.v26-r.v25)/r.v25:null;
+    return{...r,g};
+  });
+  // 나머지: 해당 월 지점 데이터 기반으로 일별 추정
+  const b=getBranches(S.month).find(x=>x.n===name)||getBranches(4).find(x=>x.n===name);
+  const days=S.month===2?28:S.month===4?30:31;
+  return Array.from({length:days},(_,i)=>{
+    const seed=((b?.c||0)*17+i*13)%100/100;
+    const noise=0.7+seed*0.6;
+    const v26=b?Math.round(b.v26/days*noise):0;
+    const v25=b?Math.round(b.v25/days*(noise/(1+(b.g||0)*0.4))):0;
+    return{d:i+1,v26,v25,g:v25>0?(v26-v25)/v25:null};
+  });
+}
+
+// 차트: 10개 뷰포트, 가로 스크롤
+function renderDailyChart(name){
+  const wrap=document.getElementById('chart-area');
+  const rows=getDailyRows(name);
+  const VISIBLE=10,PT_W=70,H=240;
+  const TOTAL_W=rows.length*PT_W+80;
+  const pad={t:14,r:16,b:30,l:60};
+  const drawW=TOTAL_W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const vals=[...rows.map(r=>r.v26),...rows.map(r=>r.v25)].filter(v=>v>0);
+  if(!vals.length){wrap.innerHTML='<div class="chart-empty">데이터 없음</div>';return;}
+  const mn=Math.min(...vals)*0.93,mx=Math.max(...vals)*1.07;
+  const n=rows.length;
+  const xs=i=>pad.l+(i/(n-1))*drawW;
+  const ys=v=>pad.t+(1-(v-mn)/(mx-mn))*ch;
+  const fmt=v=>{if(v>=1e8)return(v/1e8).toFixed(1)+'억';if(v>=1e6)return(v/1e6).toFixed(0)+'M';return v.toLocaleString();};
+  let grid='',xl='';
+  for(let i=0;i<=3;i++){
+    const y=pad.t+(i/3)*ch,val=mx-(i/3)*(mx-mn);
+    grid+=`<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${TOTAL_W-pad.r}" y2="${y.toFixed(1)}" stroke="#f2f4f6" stroke-width="1.5"/>`;
+    grid+=`<text x="${pad.l-5}" y="${(y+3.5).toFixed(1)}" text-anchor="end" fill="#adb5bd" font-size="9" font-family="JetBrains Mono">${fmt(val)}</text>`;
+  }
+  rows.forEach((r,i)=>{
+    xl+=`<text x="${xs(i).toFixed(1)}" y="${H-4}" text-anchor="middle" fill="#adb5bd" font-size="10" font-family="JetBrains Mono">${S.month}/${r.d}</text>`;
+  });
+  const p26=rows.map((r,i)=>`${!i?'M':'L'}${xs(i).toFixed(1)},${ys(r.v26).toFixed(1)}`).join(' ');
+  const p25=rows.map((r,i)=>`${!i?'M':'L'}${xs(i).toFixed(1)},${ys(r.v25).toFixed(1)}`).join(' ');
+  const a26=p26+` L${xs(n-1)},${ys(mn)} L${xs(0)},${ys(mn)} Z`;
+  const VIEW_W=VISIBLE*PT_W+pad.l+pad.r;
+  wrap.innerHTML=`<div style="width:100%;max-width:${VIEW_W}px;overflow-x:auto;overflow-y:hidden;height:${H}px;">
+    <svg width="${TOTAL_W}" height="${H}" style="overflow:hidden;display:block;">
+      <defs><linearGradient id="gd26" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="5%" stop-color="#3182f6" stop-opacity="0.1"/>
+        <stop offset="95%" stop-color="#3182f6" stop-opacity="0"/>
+      </linearGradient></defs>
+      ${grid}${xl}
+      <path d="${a26}" fill="url(#gd26)"/>
+      <path d="${p25}" fill="none" stroke="#ff4d4f" stroke-width="2" stroke-dasharray="5 5" opacity="0.7"/>
+      <path d="${p26}" fill="none" stroke="#3182f6" stroke-width="3"/>
+      ${rows.map((r,i)=>`<circle cx="${xs(i).toFixed(1)}" cy="${ys(r.v26).toFixed(1)}" r="4" fill="#3182f6" stroke="#fff" stroke-width="2"/>`).join('')}
+    </svg>
+  </div>`;
+}
+function renderDailyTable(name){
+  const rows=getDailyRows(name).slice().reverse();
+  document.getElementById('dtbody').innerHTML=rows.map(r=>{
+    const gs=r.g===null?'—':(r.g>=0?'+':'')+(r.g*100).toFixed(1)+'%';
+    const gcls=r.g===null?'nt':r.g>0?'pos':'neg';
+    return`<tr>
+      <td style="font-weight:700">${S.month}/${r.d}</td>
+      <td style="text-align:right;color:#ff4d4f;font-family:'JetBrains Mono',monospace">${fb(r.v25)}</td>
+      <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace">${fb(r.v26)}</td>
+      <td style="text-align:right;font-weight:900;" class="${gcls}">${gs}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── CUMULATIVE ──
+function buildWeekly(m){
+  const days=DAILY_IND[m]||[];const weeks=[];
+  for(let w=0;w<5;w++){
+    const s=w*7+1,e=Math.min((w+1)*7,days.length);
+    const wd=days.filter(d=>d.d>=s&&d.d<=e);
+    const y26=wd.filter(d=>d.y26!=null).reduce((a,d)=>a+d.y26,0);
+    const y25=wd.reduce((a,d)=>a+d.y25,0);
+    if(y25>0||y26>0)weeks.push({d:`${w+1}주(${m}/${s}~${e})`,y26:y26||null,y25});
+  }
+  return weeks;
+}
+function buildMonthlyCum(m){
+  let c26=0,c25=0;
+  return(DAILY_IND[m]||[]).map(d=>{
+    if(d.y26!=null)c26+=d.y26;c25+=d.y25;
+    return{d:`${m}/${d.d}`,y26:d.y26!=null?c26:null,y25:c25};
+  });
+}
+
+function selPeriod(p,btnEl,cardEl){
+  S.period=p;
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+  if(btnEl)btnEl.classList.add('active');
+  else{const idx={daily:0,weekly:1,monthly:2,annual:3}[p]||0;document.querySelectorAll('.pbtn')[idx]?.classList.add('active');}
+  document.querySelectorAll('.pcard').forEach(c=>c.classList.remove('active'));
+  if(cardEl)cardEl.classList.add('active');
+  else{const idx={daily:0,weekly:1,monthly:2,annual:3}[p]||0;document.querySelectorAll('.pcard')[idx]?.classList.add('active');}
+  renderCumPage();
+}
+
+function renderCumPage(){
+  const m=parseInt(document.getElementById('cum-month')?.value||4);
+  const cfgs={
+    daily:{title:`일별 성장율 (${m}월)`,sub:'각 날짜 개별 실적 vs 전년 동일일',label:`상세 데이터 로그 (일별)`,data:()=>DAILY_IND[m]||[]},
+    weekly:{title:`주별 성장율 (${m}월)`,sub:`${m}월 주차별 합산 비교`,label:`상세 데이터 로그 (주별)`,data:()=>buildWeekly(m)},
+    monthly:{title:`월 누적 성장율 (${m}월)`,sub:`${m}월 1일부터 날짜별 누적합`,label:`상세 데이터 로그 (월 누적)`,data:()=>buildMonthlyCum(m)},
+    annual:{title:'연간 누적 성장율 (YTD)',sub:'1월부터 현재 월까지 월별 누적합',label:'상세 데이터 로그 (연간 누적)',data:()=>CUM_ANNUAL}
+  };
+  const cfg=cfgs[S.period];
+  document.getElementById('chart-title').textContent=cfg.title;
+  document.getElementById('chart-sub').textContent=cfg.sub;
+  document.getElementById('det-label').textContent=cfg.label;
+  const data=cfg.data();
+  drawCumChart(data);renderCumTable(data);
+  // 카드 값
+  const fpp=v=>(v>0?'+':'')+(v*100).toFixed(1)+'%';
+  const getV={
+    daily:()=>{const d=(DAILY_IND[4]||[]).filter(x=>x.y26!=null).at(-1);return d?(d.y26-d.y25)/d.y25:0;},
+    weekly:()=>{const w=buildWeekly(4).at(-1);return w&&w.y26?(w.y26-w.y25)/w.y25:0;},
+    monthly:()=>{const l=buildMonthlyCum(4).filter(x=>x.y26!=null).at(-1);return l?(l.y26-l.y25)/l.y25:0;},
+    annual:()=>{const la=CUM_ANNUAL.at(-1);return(la.y26-la.y25)/la.y25;}
+  };
+  const subs={daily:`${m}월 최근 영업일`,weekly:`${m}월 주차별`,monthly:`${m}월 전체`,annual:'2026 YTD'};
+  ['daily','weekly','monthly','annual'].forEach(p=>{
+    const v=getV[p]();
+    const el=document.getElementById('pc-'+p);
+    if(el){el.textContent=fpp(v);el.className='pcard-val '+gc(v);}
+    const sub=document.getElementById('pc-'+p+'-sub');
+    if(sub)sub.textContent=subs[p];
+  });
+}
+
+function drawCumChart(data){
+  const svg=document.getElementById('cum-svg');
+  if(!svg||!data.length)return;
+  const W=svg.parentElement.clientWidth-48||960;
+  const H=380,pad={t:24,r:24,b:36,l:80};
+  svg.setAttribute('width',W);
+  svg.setAttribute('height',H);
+  svg.setAttribute('style','display:block;overflow:hidden;');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+
+  // y25 null인 경우 0 처리 제거 — 실제 있는 값만 포함
+  const v26s=data.filter(d=>d.y26!=null&&d.y26>0).map(d=>d.y26);
+  const v25s=data.filter(d=>d.y25!=null&&d.y25>0).map(d=>d.y25);
+  const all=[...v26s,...v25s];
+  if(!all.length)return;
+  const mn=Math.min(...all)*0.95,mx=Math.max(...all)*1.05;
+  const n=data.length;
+  const xs=i=>pad.l+(i/Math.max(n-1,1))*cw;
+  // ys: pad.t ~ pad.t+ch 범위로 클램프
+  const ysRaw=v=>pad.t+(1-(v-mn)/(mx-mn))*ch;
+  const ys=v=>Math.max(pad.t, Math.min(pad.t+ch, ysRaw(v)));
+  const fmt=v=>{if(v>=1e12)return(v/1e12).toFixed(1)+'조';if(v>=1e8)return(v/1e8).toFixed(0)+'억';return(v/1e6).toFixed(0)+'M';};
+  let grid='',xlbl='';
+  for(let i=0;i<=5;i++){
+    const y=pad.t+(i/5)*ch,val=mx-(i/5)*(mx-mn);
+    grid+=`<line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${pad.l+cw}" y2="${y.toFixed(1)}" stroke="#f2f4f6" stroke-width="1.5"/>`;
+    grid+=`<text x="${pad.l-10}" y="${(y+4).toFixed(1)}" text-anchor="end" fill="#adb5bd" font-size="11" font-family="JetBrains Mono" font-weight="700">${fmt(val)}</text>`;
+  }
+  const step=Math.max(1,Math.ceil(n/10));
+  data.forEach((d,i)=>{
+    if(i%step===0||i===n-1)
+      xlbl+=`<text x="${xs(i).toFixed(1)}" y="${H-4}" text-anchor="middle" fill="#adb5bd" font-size="11" font-family="JetBrains Mono" font-weight="700">${d.d}</text>`;
+  });
+
+  // 2025 선 — y25가 유효한 구간만 연결 (null/0 구간 건너뜀)
+  let p25=''; let inSeg25=false;
+  data.forEach((d,i)=>{
+    if(d.y25!=null&&d.y25>0){
+      p25+=`${inSeg25?'L':'M'}${xs(i).toFixed(1)},${ys(d.y25).toFixed(1)} `;
+      inSeg25=true;
+    } else { inSeg25=false; }
+  });
+
+  // 2026 선 — null 구간 건너뜀
+  let p26='',seg=[];
+  data.forEach((d,i)=>{
+    if(d.y26!=null&&d.y26>=0)seg.push(i);
+    else if(seg.length){p26+=seg.map((si,j)=>`${!j?'M':'L'}${xs(si).toFixed(1)},${ys(data[si].y26).toFixed(1)}`).join(' ')+' ';seg=[];}
+  });
+  if(seg.length)p26+=seg.map((si,j)=>`${!j?'M':'L'}${xs(si).toFixed(1)},${ys(data[si].y26).toFixed(1)}`).join(' ');
+
+  // 2026 면적 채우기
+  const vi=data.map((d,i)=>d.y26!=null&&d.y26>=0?i:-1).filter(i=>i>=0);
+  let a26='';
+  if(vi.length>=2){
+    const f=vi[0],l=vi.at(-1);
+    const pts=vi.map(i=>`${xs(i).toFixed(1)},${ys(data[i].y26).toFixed(1)}`).join(' L');
+    a26=`<path d="M${pts} L${xs(l)},${(pad.t+ch).toFixed(1)} L${xs(f)},${(pad.t+ch).toFixed(1)} Z" fill="rgba(49,130,246,0.07)"/>`;
+  }
+
+  // 데이터 포인트
+  let d26='',d25='';
+  data.forEach((d,i)=>{
+    if(d.y26!=null&&d.y26>=0)
+      d26+=`<circle cx="${xs(i).toFixed(1)}" cy="${ys(d.y26).toFixed(1)}" r="5" fill="#3182f6" stroke="#fff" stroke-width="2.5"><title>${d.d}: ${fmt(d.y26)}</title></circle>`;
+    if(d.y25!=null&&d.y25>0)
+      d25+=`<circle cx="${xs(i).toFixed(1)}" cy="${ys(d.y25).toFixed(1)}" r="4" fill="#ff4d4f" stroke="#fff" stroke-width="2" opacity="0.7"><title>${d.d}: ${fmt(d.y25)}</title></circle>`;
+  });
+
+  // clipPath으로 그래프 영역 바깥 잘라냄 — y0=0부터 H까지 전체 SVG 클립
+  const clipId='chart-clip-'+Date.now();
+  svg.setAttribute('height', H);
+  svg.innerHTML=`<defs>
+    <clipPath id="${clipId}">
+      <rect x="0" y="0" width="${W}" height="${H}"/>
+    </clipPath>
+    <linearGradient id="cg26" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="5%" stop-color="#3182f6" stop-opacity="0.1"/>
+      <stop offset="95%" stop-color="#3182f6" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#${clipId})">
+    ${grid}${xlbl}
+    ${a26}
+    ${p25?`<path d="${p25}" fill="none" stroke="#ff4d4f" stroke-width="2.5" stroke-dasharray="5 5" opacity="0.65"/>`:``}
+    ${p26?`<path d="${p26}" fill="none" stroke="#3182f6" stroke-width="4"/>`:``}
+    ${d25}${d26}
+  </g>`;
+}
+
+function renderCumTable(data){
+  const fmt=v=>{if(!v&&v!==0)return'—';if(v>=1e8)return(v/1e8).toFixed(1)+'억';return v.toLocaleString();};
+  const getY25=d=>d.y25||0;
+  document.getElementById('cth').innerHTML=`<tr>
+    <th class="whitespace-nowrap">날짜/기간</th>
+    <th style="text-align:right;white-space:nowrap">2026년 실적</th>
+    <th style="text-align:right;white-space:nowrap">2025년 실적</th>
+    <th style="text-align:right;white-space:nowrap">성장액</th>
+    <th style="text-align:right;white-space:nowrap">성장율</th>
+  </tr>`;
+  document.getElementById('ctb').innerHTML=[...data].reverse().map(d=>{
+    const y25=getY25(d);
+    const g=d.y26!=null&&y25?(d.y26-y25)/y25:null;
+    const diff=d.y26!=null?d.y26-y25:null;
+    return`<tr>
+      <td style="font-weight:700;white-space:nowrap">${d.d}</td>
+      <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;white-space:nowrap">${fmt(d.y26)}</td>
+      <td style="text-align:right;color:#ff4d4f;font-family:'JetBrains Mono',monospace;white-space:nowrap">${fmt(y25)}</td>
+      <td style="text-align:right;font-weight:700;font-family:'JetBrains Mono',monospace;white-space:nowrap" class="${diff!=null?gc(diff):'nt'}">${diff!=null?fmt(diff):'—'}</td>
+      <td style="text-align:right;font-weight:900;white-space:nowrap" class="${g!=null?gc(g):'nt'}">${g!=null?(g>=0?'+':'')+(g*100).toFixed(1)+'%':'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── PAGE SWITCH ──
+function goPage(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.toss-nav-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById('pg-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='cum')setTimeout(()=>renderCumPage(),60);
+}
+
+// ── 스피너 애니메이션 ──
+const style=document.createElement('style');
+style.textContent='@keyframes spin{to{transform:rotate(360deg)}}';
+document.head.appendChild(style);
+
+// ── INIT ──
+function init(){
+  S.month=4;S.filter=null;S.selBranch=null;
+  document.getElementById('gmonth').value=4;
+  updateSummary();renderRanks();renderFilterRow();renderBranchTable();
+}
+init();
+
+// 페이지 로드시 API 자동 fetch 시도
+window.addEventListener('load', ()=>{
+  // API URL이 기본값이 아닌 경우에만 fetch 시도
+  if(API_URL && !API_URL.includes('YOUR_SCRIPT_ID')){
+    refreshData();
+  }
+});
+</script>
+</body>
+</html>
